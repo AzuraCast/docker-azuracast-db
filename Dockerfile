@@ -1,3 +1,10 @@
+FROM golang:1.17-buster AS dockerize
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl git
+
+RUN go install github.com/jwilder/dockerize@latest
+
 FROM mariadb:10.5-focal
 
 # Fix locales and update packages
@@ -12,15 +19,7 @@ ENV LANGUAGE="en_US.UTF-8" \
     LANG="en_US.UTF-8"
 
 # Add Dockerize
-ENV DOCKERIZE_VERSION v0.6.1
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget ca-certificates openssl \
-    && wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && apt-get purge -y --auto-remove wget ca-certificates openssl \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=dockerize /go/bin/dockerize /usr/local/bin
 
 # Sensible default environment values for AzuraCast instances
 ENV MYSQL_HOST="mariadb" \
